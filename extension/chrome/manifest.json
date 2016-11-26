@@ -33,6 +33,11 @@
 
   "content_scripts": [
     {
+      "matches": ["http://*/*","https://*/*"],
+      "js": ["js/vendors/jquery.js"]
+
+    },
+    {
       "matches": ["<all_urls>"],
       "js": ["js/content.js"]
     }
