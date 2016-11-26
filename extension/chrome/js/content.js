@@ -61,3 +61,26 @@ function getTakeawayRating(takeaway) {
 
 
 }
+
+jQuery.fn.insertAt = function(index, element) {
+    var lastIndex = this.children().size();
+    if (index < 0) {
+        index = Math.max(0, lastIndex + 1 + index)
+    }
+    this.append(element);
+    if (index < lastIndex) {
+        this.children().eq(index).before(this.children().last())
+    }
+    return this;
+};
+
+function insertRatingImage(index, name, rating) {
+    //Quite possibly the most disgusting javascript selector I've ever written.
+    var $detailsDiv = $("div").filter(function( index ) {
+        return $( this ).attr( "class" ) == "o-tile c-restaurant";
+    }).eq(index).eq(0).children().eq(0).children().eq(2).children().eq(1);
+    $( "<p>" + rating + "</p>" ).insertAfter($detailsDiv)
+}
+
+insertRatingImage(0, "HAHAHAH", "This restaurant sucks and rates badly");
+
