@@ -58,7 +58,7 @@ function getTakeawayRatingMP(takeaway) {
     });chrom*/
 
     chrome.runtime.sendMessage({"postcode": takeawayPostcode, "name": takeawayName}, function(response) {
-        console.log(response.rating);
-        ratingJson = response.rating;
+        console.log(response);/*
+        ratingJson = response.data;*/
     });
 }

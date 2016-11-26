@@ -15,26 +15,45 @@ chrome.runtime.onMessage.addListener(
         "from a content script:" + sender.tab.url :
             "from the extension");
         if (request) {
-            var rating = getTakeawayRating(request.postcode, request.name, function (data) {
+            var rating = getTakeawayRating(request.postcode, request.name);
+            //console.log("RATING: ---- " + getTakeawayRating(request.postcode, request.name));
+
+           /* rating.success(function (data) {
+               console.log("Received DATA: ----- " + data);
+            });*/
+
+            //var objest = rating;
+            var string = rating.responseText;
+
+            rating.done(function (data) {
+                //console.log(data);
+                sendResponse({"rating": "rating"});
+            })
+            //sendResponse({"hello": "world"});
+
+
+            //sendResponse({"rating": rating.success()});
+            /*rating.success(function (data) {
                 console.log(data);
-                return data;
-            });
-            sendResponse({"rating": rating});
+                //var rating = data;
+                sendResponse({"rating": data});
+            });*/
+
         }
 
     }
 );
 
-function getTakeawayRating(postcode, name, callback) {
+function getTakeawayRating(postcode, name) {
 
     var FSA_URL = FSA_HOST + name + "/" + postcode + "/" + FSA_HOST_SUFFIX;
     console.log("URL: " + FSA_URL);
 
-    var ratingJson = $.ajax({
+    return $.ajax({
         url: FSA_URL,
         success: function(data) {
-            console.log(data);
-            callback(data);
+            //console.log(data);
+            data;
         },
         error: function () {
             console.log("Error!");
