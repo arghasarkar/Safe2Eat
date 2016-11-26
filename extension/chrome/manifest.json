@@ -1,0 +1,47 @@
+{
+  "name": "Safe takeaways",
+  "version": "1.1.0.1",
+  "manifest_version": 2,
+  "options_page": "options.html",
+  "description": "We display hygene ratings next to JustEat and HungryHouse take aways",
+  "browser_action": {
+    "default_icon": {
+      "19": "images/icons/take-away-32.png",
+      "38": "images/icons/take-away-64.png"
+    },
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "images/icons/take-away-32.png",
+    "128": "images/icons/take-away-64.png"
+  },
+  "content_security_policy": "script-src 'self' 'unsafe-eval' https://*.pusher.com; object-src 'self'",
+
+  "permissions": [
+
+    "contextMenus",
+    "activeTab",
+    "webRequest",
+    "storage",
+
+    "https://*.pusher.com/*",
+    "*://pusher.com/*",
+    "*://*.pusher.com/",
+
+    "http://getcouper.com:8000/*"
+  ],
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["js/content.js"]
+    }
+  ],
+
+
+  "background": {
+    "scripts": [
+      "js/background.js"
+    ]
+  }
+}
