@@ -11,9 +11,7 @@ function init() {
 
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
-        console.log(sender.tab ?
-        "from a content script:" + sender.tab.url :
-            "from the extension");
+       
         if (request) {
             var rating = getTakeawayRating(request.postcode, request.name);
             //console.log("RATING: ---- " + getTakeawayRating(request.postcode, request.name));
@@ -26,8 +24,8 @@ chrome.runtime.onMessage.addListener(
             var string = rating.responseText;
 
             rating.done(function (data) {
-                //console.log(data);
-                sendResponse({"rating": "rating"});
+                console.log(data);
+                sendResponse({"rating": data});
             })
             //sendResponse({"hello": "world"});
 
