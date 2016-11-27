@@ -42,6 +42,15 @@
       "js": ["js/content.js"]
     }
   ],
+  "web_accessible_resources": [
+    "images/fhrs_0_en-gb.jpg",
+    "images/fhrs_1_en-gb.jpg",
+    "images/fhrs_2_en-gb.jpg",
+    "images/fhrs_3_en-gb.jpg",
+    "images/fhrs_4_en-gb.jpg",
+    "images/fhrs_5_en-gb.jpg",
+    "images/fhrs_awaitinginspection_en-gb.jpg"
+  ],
 
 
   "background": {

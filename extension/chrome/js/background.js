@@ -11,14 +11,15 @@ function init() {
 
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
-       
+
         if (request) {
+            console.log("This is executing");
             var rating = getTakeawayRating(request.postcode, request.name);
             //console.log("RATING: ---- " + getTakeawayRating(request.postcode, request.name));
 
-           /* rating.success(function (data) {
-               console.log("Received DATA: ----- " + data);
-            });*/
+            /* rating.success(function (data) {
+             console.log("Received DATA: ----- " + data);
+             });*/
 
             //var objest = rating;
             var string = rating.responseText;
@@ -26,16 +27,17 @@ chrome.runtime.onMessage.addListener(
             rating.done(function (data) {
                 console.log(data);
                 sendResponse({"rating": data});
-            })
+            });
+            return true;
             //sendResponse({"hello": "world"});
 
 
             //sendResponse({"rating": rating.success()});
             /*rating.success(function (data) {
-                console.log(data);
-                //var rating = data;
-                sendResponse({"rating": data});
-            });*/
+             console.log(data);
+             //var rating = data;
+             sendResponse({"rating": data});
+             });*/
 
         }
 

@@ -1,5 +1,13 @@
 init();
 
+urls = [chrome.extension.getURL("images/fhrs_0_en-gb.jpg"),
+    chrome.extension.getURL("images/fhrs_1_en-gb.jpg"),
+    chrome.extension.getURL("images/fhrs_2_en-gb.jpg"),
+    chrome.extension.getURL("images/fhrs_3_en-gb.jpg"),
+    chrome.extension.getURL("images/fhrs_4_en-gb.jpg"),
+    chrome.extension.getURL("images/fhrs_5_en-gb.jpg"),
+    chrome.extension.getURL("images/fhrs_awaitinginspection_en-gb.jpg")];
+
 function init() {
 
     takeaways = []
@@ -18,7 +26,7 @@ function init() {
 
         takeaways.push(
             [
-               postcode,
+                postcode,
 
                 $( this ).find(
                     "[data-ft='restaurantDetailsName']"
@@ -32,13 +40,13 @@ function init() {
     });
 
     for (var res in takeaways) {
-        var rating = getTakeawayRatingMP(takeaways[res]);
+        var rating = getTakeawayRatingMP(takeaways[res], res);
         console.log(takeaways[res]);
     }
 }
 
 
-function getTakeawayRatingMP(takeaway) {
+function getTakeawayRatingMP(takeaway, index) {
     var takeawayPostcode = takeaway[0];
     var takeawayName = takeaway[1];
     /*
@@ -56,13 +64,25 @@ function getTakeawayRatingMP(takeaway) {
      console.log("Error!");
      }
      });chrom*/
-    chrome.runtime.sendMessage({"postcode": takeawayPostcode, "name": takeawayName}, function (response) {
-        console.log(response.rating);
-        /*
-         ratingJson = response.data;*/
-    });
 
+    chrome.runtime.sendMessage({"postcode": takeawayPostcode, "name": takeawayName}, function(response) {
+        jsonResponse = JSON.parse(response.rating);
+        /**
+         * Call a function here to insert the RATING IMAGE.
+         * Index: index
+         * Data: jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail
+         * eg --> somefunction(index, jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.ratingValue)
+         */
+        if (jsonResponse.FHRSEstablishment.EstablishmentCollection) {
+            insertRatingImage(index, '<img src="' + urls[jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue] + '" />');
+        } else {
+            insertRatingImage(index, '<img src="' + urls[6] + '" />');
+
+            insertRatingImage(index, "No rating")
+        }
+    });
 }
+
 
 
 jQuery.fn.insertAt = function(index, element) {
@@ -77,7 +97,7 @@ jQuery.fn.insertAt = function(index, element) {
     return this;
 };
 
-function insertRatingImage(index, name, rating) {
+function insertRatingImage(index, rating) {
     //Quite possibly the most disgusting javascript selector I've ever written.
     var $detailsDiv = $("div").filter(function( index ) {
         return $( this ).attr( "class" ) == "o-tile c-restaurant";
@@ -85,6 +105,5 @@ function insertRatingImage(index, name, rating) {
     $( "<p>" + rating + "</p>" ).insertAfter($detailsDiv)
 }
 
-insertRatingImage(0, "HAHAHAH", "This restaurant sucks and rates badly");
-
+insertRatingImage(1, "This restaurant sucks and rates badly");
 
