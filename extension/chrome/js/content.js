@@ -2,9 +2,6 @@ init();
 
 function init() {
 
-    FSA_HOST = "http://ratings.food.gov.uk/search/";
-    FSA_HOST_SUFFIX = "json";
-
     takeaways = []
     $( "div" ).filter(function( index ) {
         return $( this ).attr( "class" ) == "o-tile c-restaurant";
@@ -35,21 +32,22 @@ function init() {
     });
 
     for (var res in takeaways) {
-        var rating = getTakeawayRating(takeaways[res]);
+        var rating = getTakeawayRatingMP(takeaways[res], res);
         console.log(takeaways[res]);
     }
 }
 
 
-function getTakeawayRating(takeaway) {
+function getTakeawayRatingMP(takeaway, index) {
     var takeawayPostcode = takeaway[0];
     var takeawayName = takeaway[1];
+/*
+    var ratingUrl = FSA_HOST + takeawayName + "/" + takeawayPostcode + "/" + FSA_HOST_SUFFIX;*/
+    var ratingJson = "";
 
-    var ratingUrl = FSA_HOST + takeawayName + "/" + takeawayPostcode + "/" + FSA_HOST_SUFFIX;
+    //console.log(ratingUrl);
 
-    console.log(ratingUrl);
-
-    var ratingJson = $.ajax({
+    /*var ratingJson = $.ajax({
         url: ratingUrl,
         success: function(data) {
             console.log(data);
@@ -57,7 +55,18 @@ function getTakeawayRating(takeaway) {
         error: function () {
             console.log("Error!");
         }
+    });chrom*/
+
+    chrome.runtime.sendMessage({"postcode": takeawayPostcode, "name": takeawayName}, function(response) {
+        jsonResponse = JSON.parse(response.rating);
+        console.log(index);
+
+        /**
+         * Call a function here to insert the RATING IMAGE.
+         * Index: index
+         * Data: jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail
+         * eg --> somefunction(index, jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.ratingValue)
+         */
+        console.log(jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail);
     });
-
-
 }
