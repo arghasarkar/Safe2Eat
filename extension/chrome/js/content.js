@@ -76,10 +76,7 @@ function getTakeawayRatingMP(takeaway, index) {
         if (jsonResponse.FHRSEstablishment.EstablishmentCollection) {
             insertRatingImage(index, '<img src="' + urls[jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue] + '" />');
         } else {
-            insertRatingImage(index, '<img src="' + urls[6] + '" />');
-
-            insertRatingImage(index, "No rating")
-        }
+            insertRatingImage(index, '<img src="' + urls[6] + '" />');}
     });
 }
 
