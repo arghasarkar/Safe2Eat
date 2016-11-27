@@ -1,3 +1,5 @@
+IS_JE = true;
+
 init();
 
 urls = [chrome.extension.getURL("images/fhrs_0_en-gb.jpg"),
@@ -11,59 +13,73 @@ urls = [chrome.extension.getURL("images/fhrs_0_en-gb.jpg"),
 function init() {
 
     takeaways = []
-    $( "div" ).filter(function( index ) {
-        return $( this ).attr( "class" ) == "o-tile c-restaurant";
-    }).each(function( index ) {
 
-        var postcode =  $( this ).find(
-            "[data-ft='restaurantDetailsAddress']"
-        ).html();
+    var url = window.location.href;
+    if (url.includes("just")) {
+        // CODE FOR JUST EAT
+        console.log("Just eat");
 
-        postcode = postcode.split(", ");
-        postcode = postcode[postcode.length - 1];
+        $( "div" ).filter(function( index ) {
+            return $( this ).attr( "class" ) == "o-tile c-restaurant";
+        }).each(function( index ) {
 
+            var postcode =  $( this ).find(
+                "[data-ft='restaurantDetailsAddress']"
+            ).html();
+
+            postcode = postcode.split(", ");
+            postcode = postcode[postcode.length - 1];
+
+            var rating = 0;
+
+            takeaways.push(
+                [
+                    postcode,
+
+                    $( this ).find(
+                        "[data-ft='restaurantDetailsName']"
+                    ).html()
+
+                    ,
+                    rating
+                ]
+            );
+
+        });
+
+        for (var res in takeaways) {
+            var rating = getTakeawayRatingMP(takeaways[res], res);
+            console.log(takeaways[res]);
+        }
+
+    } else {
+        // CODE FOR HUNGRY HOUSE
+        IS_JE = false;
+        console.log("Hungry house");
+
+        var postcode = $( "span[itemprop='postalCode']" )[0].innerText.trim();
+        var takeawayName = document.getElementsByClassName("regular current")[0].innerText.trim();
         var rating = 0;
 
-        takeaways.push(
-            [
-                postcode,
+        takeaways.push(postcode, takeawayName, rating);
 
-                $( this ).find(
-                    "[data-ft='restaurantDetailsName']"
-                ).html()
-
-                ,
-                rating
-            ]
-        );
-
-    });
-
-    for (var res in takeaways) {
-        var rating = getTakeawayRatingMP(takeaways[res], res);
-        console.log(takeaways[res]);
+        console.log(takeaways);
+        getTakeawayRatingMP(takeaways, 0);
     }
+
 }
 
-
+/**
+ * JUST EAT
+ * @param takeaway
+ * @param index
+ */
 function getTakeawayRatingMP(takeaway, index) {
     var takeawayPostcode = takeaway[0];
     var takeawayName = takeaway[1];
     /*
      var ratingUrl = FSA_HOST + takeawayName + "/" + takeawayPostcode + "/" + FSA_HOST_SUFFIX;*/
     var ratingJson = "";
-
-    //console.log(ratingUrl);
-
-    /*var ratingJson = $.ajax({
-     url: ratingUrl,
-     success: function(data) {
-     console.log(data);
-     },
-     error: function () {
-     console.log("Error!");
-     }
-     });chrom*/
 
     chrome.runtime.sendMessage({"postcode": takeawayPostcode, "name": takeawayName}, function(response) {
         jsonResponse = JSON.parse(response.rating);
@@ -74,33 +90,54 @@ function getTakeawayRatingMP(takeaway, index) {
          * eg --> somefunction(index, jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.ratingValue)
          */
         if (jsonResponse.FHRSEstablishment.EstablishmentCollection) {
-            insertRatingImage(index, '<img src="' + urls[jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue] + '" />');
+            if (IS_JE) {
+                insertRatingImage(index, '<img src="' + urls[jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue] + '" />');
+            } else {
+                insertRatingImageHH('<img src="' + urls[jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue] + '" />');
+            }
         } else {
-            insertRatingImage(index, '<img src="' + urls[6] + '" />');}
+            if (IS_JE) {
+                insertRatingImage(index, '<img src="' + urls[6] + '" />');
+            } else {
+                insertRatingImageHH('<img src="' + urls[6] + '" />');
+            }
+        }
     });
 }
+/**
+ * JUST EAT
+ * @param index
+ * @param elementß
+ * @returns {jQuery}
+ */
+if (IS_JE) {
+    jQuery.fn.insertAt = function(index, element) {
+        var lastIndex = this.children().size();
+        if (index < 0) {
+            index = Math.max(0, lastIndex + 1 + index)
+        }
+        this.append(element);
+        if (index < lastIndex) {
+            this.children().eq(index).before(this.children().last())
+        }
+        return this;
+    };
 
-
-
-jQuery.fn.insertAt = function(index, element) {
-    var lastIndex = this.children().size();
-    if (index < 0) {
-        index = Math.max(0, lastIndex + 1 + index)
+    function insertRatingImage(index, rating) {
+        //Quite possibly the most disgusting javascript selector I've ever written.
+        var $detailsDiv = $("div").filter(function( index ) {
+            return $( this ).attr( "class" ) == "o-tile c-restaurant";
+        }).eq(index).eq(0).children().eq(0).children().eq(2).children().eq(1);
+        $( "<p style='float: right;margin-top: -40px;margin-right: 10px;padding-top: 20px;'>" + rating + "</p>" ).insertAfter($detailsDiv)
     }
-    this.append(element);
-    if (index < lastIndex) {
-        this.children().eq(index).before(this.children().last())
-    }
-    return this;
-};
 
-function insertRatingImage(index, rating) {
-    //Quite possibly the most disgusting javascript selector I've ever written.
-    var $detailsDiv = $("div").filter(function( index ) {
-        return $( this ).attr( "class" ) == "o-tile c-restaurant";
-    }).eq(index).eq(0).children().eq(0).children().eq(2).children().eq(1);
-    $( "<p style='float: right;margin-top: -40px;margin-right: 10px;padding-top: 20px;'>" + rating + "</p>" ).insertAfter($detailsDiv)
+    insertRatingImage(1, "");
+} else {
+
 }
-
-insertRatingImage(1, "");
+// HUNGRY HOUSE
+function insertRatingImageHH(rating) {
+    console.log("Rating: " + rating);
+    $( "<p style='float: right;margin-top: -15px;'>" + rating + "</p>" ).insertAfter($("#restMainInfoWrapper").children().last());
+}
 
