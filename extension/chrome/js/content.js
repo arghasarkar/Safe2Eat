@@ -99,7 +99,7 @@ function insertRatingImage(index, rating) {
     var $detailsDiv = $("div").filter(function( index ) {
         return $( this ).attr( "class" ) == "o-tile c-restaurant";
     }).eq(index).eq(0).children().eq(0).children().eq(2).children().eq(1);
-    $( "<p style='margin-top: 10px;float: right;margin-top: -30px;margin-right: 20px;'>" + rating + "</p>" ).insertAfter($detailsDiv)
+    $( "<p style='float: right;margin-top: -40px;margin-right: 10px;padding-top: 20px;'>" + rating + "</p>" ).insertAfter($detailsDiv)
 }
 
 insertRatingImage(1, "");
