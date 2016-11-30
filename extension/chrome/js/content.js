@@ -1,14 +1,23 @@
+const UNRATED_VALUE = 6;
+
+const JUST_EAT_SEARCH_LIST = "o-tile c-restaurant";
+const JUST_EAT_INDIVIDUAL_NAME = "name";
+const JUST_EAT_INDIVIDUAL_POSTCODE = "postcode";
+const JUST_EAT_INDIVIDUAL_PLACEHOLDER = "ratings";
+
 IS_JE = true;
 
 init();
 
-urls = [chrome.extension.getURL("images/fhrs_0_en-gb.jpg"),
+urls = [
+    chrome.extension.getURL("images/fhrs_0_en-gb.jpg"),
     chrome.extension.getURL("images/fhrs_1_en-gb.jpg"),
     chrome.extension.getURL("images/fhrs_2_en-gb.jpg"),
     chrome.extension.getURL("images/fhrs_3_en-gb.jpg"),
     chrome.extension.getURL("images/fhrs_4_en-gb.jpg"),
     chrome.extension.getURL("images/fhrs_5_en-gb.jpg"),
-    chrome.extension.getURL("images/fhrs_awaitinginspection_en-gb.jpg")];
+    chrome.extension.getURL("images/fhrs_awaitinginspection_en-gb.jpg")
+];
 
 function init() {
 
@@ -18,38 +27,45 @@ function init() {
     if (url.includes("just")) {
         // CODE FOR JUST EAT
         console.log("Just eat");
+        /**
+         * Checking to see if this is in a list or an individual restaurant
+         */
 
-        $( "div" ).filter(function( index ) {
-            return $( this ).attr( "class" ) == "o-tile c-restaurant";
-        }).each(function( index ) {
+        if (document.getElementsByClassName("name").length <= 0) {
+            // List
+            $( "div" ).filter(function( index ) {
+                return $( this ).attr( "class" ) == JUST_EAT_SEARCH_LIST;
+            }).each(function( index ) {
+                var postcode =  $( this ).find(
+                    "[data-ft='restaurantDetailsAddress']"
+                ).html();
 
-            var postcode =  $( this ).find(
-                "[data-ft='restaurantDetailsAddress']"
-            ).html();
+                postcode = postcode.split(", ");
+                postcode = postcode[postcode.length - 1];
 
-            postcode = postcode.split(", ");
-            postcode = postcode[postcode.length - 1];
+                var rating = UNRATED_VALUE;
 
-            var rating = 0;
-
-            takeaways.push(
-                [
+                takeaways.push([
                     postcode,
-
                     $( this ).find(
                         "[data-ft='restaurantDetailsName']"
-                    ).html()
-
-                    ,
+                    ).html(),
                     rating
-                ]
-            );
+                ]);
+            });
 
-        });
-
-        for (var res in takeaways) {
-            var rating = getTakeawayRatingMP(takeaways[res], res);
-            console.log(takeaways[res]);
+            for (var res in takeaways) {
+                var rating = getTakeawayRatingMP(takeaways[res], res);
+                console.log(takeaways[res]);
+            }
+        } else {
+            // Individual restaurant
+            takeaways.push([
+                getJustEatIndividualPostcode(),
+                getJustEatIndividualName(),
+                UNRATED_VALUE
+            ]);
+            _new_getTakeawayRatingMP(takeaways[0]);
         }
 
     } else {
@@ -66,7 +82,31 @@ function init() {
         console.log(takeaways);
         getTakeawayRatingMP(takeaways, 0);
     }
+}
 
+function _new_getTakeawayRatingMP(takeaway) {
+    chrome.runtime.sendMessage({"postcode": takeaway[0], "name": takeaway[1]}, function(response) {
+        jsonResponse = JSON.parse(response.rating);
+
+        /**
+         * Call a function here to return the rating
+         * Data: jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail <--  Rating exists
+         * Else: The rating has not been found.
+         */
+        if (jsonResponse.FHRSEstablishment.EstablishmentCollection) {
+            handleRes(jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue);
+        } else {
+            handleRes(6);
+        }
+        return true;
+    });
+
+    var handleRes = function (rating) {
+        setJustEatIndividualRating(rating);
+        console.log(rating);
+    }
+
+    return true;
 }
 
 /**
@@ -77,9 +117,6 @@ function init() {
 function getTakeawayRatingMP(takeaway, index) {
     var takeawayPostcode = takeaway[0];
     var takeawayName = takeaway[1];
-    /*
-     var ratingUrl = FSA_HOST + takeawayName + "/" + takeawayPostcode + "/" + FSA_HOST_SUFFIX;*/
-    var ratingJson = "";
 
     chrome.runtime.sendMessage({"postcode": takeawayPostcode, "name": takeawayName}, function(response) {
         jsonResponse = JSON.parse(response.rating);
@@ -91,13 +128,13 @@ function getTakeawayRatingMP(takeaway, index) {
          */
         if (jsonResponse.FHRSEstablishment.EstablishmentCollection) {
             if (IS_JE) {
-                insertRatingImage(index, '<img src="' + urls[jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue] + '" />');
+                insertRatingImageSearchList(index, '<img src="' + urls[jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue] + '" />');
             } else {
                 insertRatingImageHH('<img src="' + urls[jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue] + '" />');
             }
         } else {
             if (IS_JE) {
-                insertRatingImage(index, '<img src="' + urls[6] + '" />');
+                insertRatingImageSearchList(index, '<img src="' + urls[6] + '" />');
             } else {
                 insertRatingImageHH('<img src="' + urls[6] + '" />');
             }
@@ -123,7 +160,7 @@ if (IS_JE) {
         return this;
     };
 
-    function insertRatingImage(index, rating) {
+    function insertRatingImageSearchList(index, rating) {
         //Quite possibly the most disgusting javascript selector I've ever written.
         var $detailsDiv = $("div").filter(function( index ) {
             return $( this ).attr( "class" ) == "o-tile c-restaurant";
@@ -131,7 +168,7 @@ if (IS_JE) {
         $( "<p style='float: right;margin-top: -40px;margin-right: 10px;padding-top: 20px;'>" + rating + "</p>" ).insertAfter($detailsDiv)
     }
 
-    insertRatingImage(1, "");
+    insertRatingImageSearchList(1, "");
 } else {
 
 }
@@ -139,5 +176,25 @@ if (IS_JE) {
 function insertRatingImageHH(rating) {
     console.log("Rating: " + rating);
     $( "<p style='float: right;margin-top: -15px;'>" + rating + "</p>" ).insertAfter($("#restMainInfoWrapper").children().last());
+}
+
+function getJustEatIndividualName() {
+    return document.getElementsByClassName(JUST_EAT_INDIVIDUAL_NAME)[0].textContent;
+}
+function getJustEatIndividualPostcode() {
+    return document.getElementById(JUST_EAT_INDIVIDUAL_POSTCODE).innerText;
+}
+/**
+ * Inserts the HTML rating into next to the individual take away on just-eat.com
+ * @param rating
+ */
+function setJustEatIndividualRating(rating) {
+    var img = $('<img />', {
+        src: urls[rating],
+        alt: 'Food standards agency has given this takeaway a rating of ' + rating + '.',
+    });
+    img.css("float", "right");
+    img.css("margin-top", "-30px");
+    img.appendTo($("." + JUST_EAT_INDIVIDUAL_PLACEHOLDER));
 }
 

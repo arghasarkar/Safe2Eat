@@ -15,30 +15,16 @@ chrome.runtime.onMessage.addListener(
         if (request) {
             console.log("This is executing");
             var rating = getTakeawayRating(request.postcode, request.name);
-            //console.log("RATING: ---- " + getTakeawayRating(request.postcode, request.name));
 
-            /* rating.success(function (data) {
-             console.log("Received DATA: ----- " + data);
-             });*/
-
-            //var objest = rating;
-            var string = rating.responseText;
-
+            /**
+             * When the rating has been fetched, send the response with the content script to inject the Rating
+             */
             rating.done(function (data) {
                 console.log(data);
                 sendResponse({"rating": data});
             });
+            // Returns true so that the rating ajax can be sent off asynchronously
             return true;
-            //sendResponse({"hello": "world"});
-
-
-            //sendResponse({"rating": rating.success()});
-            /*rating.success(function (data) {
-             console.log(data);
-             //var rating = data;
-             sendResponse({"rating": data});
-             });*/
-
         }
 
     }
@@ -52,7 +38,6 @@ function getTakeawayRating(postcode, name) {
     return $.ajax({
         url: FSA_URL,
         success: function(data) {
-            //console.log(data);
             data;
         },
         error: function () {
