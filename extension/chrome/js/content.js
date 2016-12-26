@@ -5,9 +5,10 @@ const JUST_EAT_INDIVIDUAL_NAME = "name";
 const JUST_EAT_INDIVIDUAL_POSTCODE = "postcode";
 const JUST_EAT_INDIVIDUAL_PLACEHOLDER = "ratings";
 
-IS_JE = true;
+const HUNGRY_HOUSE_SEARCH_LIST = "restsDeliveryInfo";
 
-init();
+takeaways = [];
+IS_JE = true;
 
 urls = [
     chrome.extension.getURL("images/fhrs_0_en-gb.jpg"),
@@ -19,18 +20,16 @@ urls = [
     chrome.extension.getURL("images/fhrs_awaitinginspection_en-gb.jpg")
 ];
 
-function init() {
+window.addEventListener ("load", init, true);
 
-    takeaways = []
+function init() {
 
     var url = window.location.href;
     if (url.includes("just")) {
         // CODE FOR JUST EAT
-        console.log("Just eat");
         /**
          * Checking to see if this is in a list or an individual restaurant
          */
-
         if (document.getElementsByClassName("name").length <= 0) {
             // List
             $( "div" ).filter(function( index ) {
@@ -56,7 +55,6 @@ function init() {
 
             for (var res in takeaways) {
                 var rating = getTakeawayRatingMP(takeaways[res], res);
-                console.log(takeaways[res]);
             }
         } else {
             // Individual restaurant
@@ -71,16 +69,31 @@ function init() {
     } else {
         // CODE FOR HUNGRY HOUSE
         IS_JE = false;
-        console.log("Hungry house");
 
-        var postcode = $( "span[itemprop='postalCode']" )[0].innerText.trim();
-        var takeawayName = document.getElementsByClassName("regular current")[0].innerText.trim();
-        var rating = 0;
+        /**
+         * The URL for the search listing on HungryHouse has "/takeaway" if the search results are being displayed.
+         * However, when browsing the contents of an individual take away, the URL does not contain this. Use this check
+         * to see if the search results are being viewed or an individual takeaway.
+         */
+        if (window.location.href.includes("/takeaway")) {
 
-        takeaways.push(postcode, takeawayName, rating);
+            var takeawayLinks = document.getElementsByClassName("restPageLink restsRestStatus");
 
-        console.log(takeaways);
-        getTakeawayRatingMP(takeaways, 0);
+            for (var i = 0; i < takeawayLinks.length; i++) {
+                var takeawayUrl = takeawayLinks[i].href;
+                var takeawayName = takeawayLinks[i].title;
+                getHHSearchPostcode(takeawayName, takeawayUrl, i);
+            }
+
+        } else {
+
+            var postcode = document.getElementsByClassName("address")[0].childNodes[5].innerText.trim();
+            var takeawayName = document.getElementsByClassName("regular current")[0].innerText.trim();
+            var rating = 0;
+
+            takeaways.push(postcode, takeawayName, rating);
+            getTakeawayRatingMP(takeaways, 0);
+        }
     }
 }
 
@@ -93,24 +106,27 @@ function _new_getTakeawayRatingMP(takeaway) {
          * Data: jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail <--  Rating exists
          * Else: The rating has not been found.
          */
+        var rating = 6;
         if (jsonResponse.FHRSEstablishment.EstablishmentCollection) {
-            handleRes(jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue);
-        } else {
-            handleRes(6);
+            if (jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.length > 1) {
+                rating = jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail[0].RatingValue;
+            } else {
+                rating = jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue;
+            }
         }
+        handleRes(rating);
         return true;
     });
 
     var handleRes = function (rating) {
         setJustEatIndividualRating(rating);
-        console.log(rating);
-    }
+    };
 
     return true;
 }
 
 /**
- * JUST EAT
+ * JUST EAT rating and Hungryhouse's individual rating
  * @param takeaway
  * @param index
  */
@@ -126,21 +142,29 @@ function getTakeawayRatingMP(takeaway, index) {
          * Data: jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail
          * eg --> somefunction(index, jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.ratingValue)
          */
+        var rating = 6;
         if (jsonResponse.FHRSEstablishment.EstablishmentCollection) {
-            if (IS_JE) {
-                insertRatingImageSearchList(index, '<img src="' + urls[jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue] + '" />');
+            if (jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.length > 1) {
+                rating = jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail[0].RatingValue
             } else {
-                insertRatingImageHH('<img src="' + urls[jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue] + '" />');
+                rating = jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue;
             }
+        }
+        if (IS_JE) {
+            insertRatingImageSearchList(index, '<img src="' + urls[rating] + '" />');
         } else {
+            insertRatingImageHH('<img src="' + urls[rating] + '" />');
+        }
+        /*else {
             if (IS_JE) {
                 insertRatingImageSearchList(index, '<img src="' + urls[6] + '" />');
             } else {
                 insertRatingImageHH('<img src="' + urls[6] + '" />');
             }
-        }
+        }*/
     });
 }
+
 /**
  * JUST EAT
  * @param index
@@ -169,12 +193,10 @@ if (IS_JE) {
     }
 
     insertRatingImageSearchList(1, "");
-} else {
-
 }
+
 // HUNGRY HOUSE
 function insertRatingImageHH(rating) {
-    console.log("Rating: " + rating);
     $( "<p style='float: right;margin-top: -15px;'>" + rating + "</p>" ).insertAfter($("#restMainInfoWrapper").children().last());
 }
 
@@ -184,6 +206,23 @@ function getJustEatIndividualName() {
 function getJustEatIndividualPostcode() {
     return document.getElementById(JUST_EAT_INDIVIDUAL_POSTCODE).innerText;
 }
+
+/**
+ * Sets / Injects the FSA rating for the restaurant given the rating and its index in the page
+ * @param rating
+ * @param index
+ */
+function setHungryHouseSearchListRating(rating, index) {
+    var img = $('<img />', {
+        src: urls[rating],
+        alt: 'Food standards agency has given this takeaway a rating of ' + rating + '.',
+    });
+    img.css("float", "right");
+    img.css("margin-right", "180px");
+    img.css("margin-top", "-15px");
+    img.appendTo($("." + HUNGRY_HOUSE_SEARCH_LIST)[index]);
+}
+
 /**
  * Inserts the HTML rating into next to the individual take away on just-eat.com
  * @param rating
@@ -197,4 +236,59 @@ function setJustEatIndividualRating(rating) {
     img.css("margin-top", "-30px");
     img.appendTo($("." + JUST_EAT_INDIVIDUAL_PLACEHOLDER));
 }
+
+function getHHSearchPostcode(takeawayName, url, indexOfTakewayOnList) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+
+            var _html = $(this.responseText);
+            var _address = $(".address", _html);
+            var _postCode = $.trim(_address[0].childNodes[5].innerText);
+
+            for (var i = 0; i < _address[0].childNodes.length; i++) {
+                if (valid_postcode($.trim(_address[0].childNodes[i].innerText))) {
+                    _postCode = $.trim(_address[0].childNodes[i].innerText);
+                    break;
+                }
+            }
+
+            // Get the rating from the API using the postcode and the name of the takeaway
+            getAndInsertHHSearchRating(takeawayName, _postCode, indexOfTakewayOnList);
+        }
+    };
+    xhttp.open("GET", url, true);
+    xhttp.send();
+}
+
+/**
+ * Uses the takeaway name and the postcode to get the FSA rating for the given HH takeaway
+ * @param takeawayName
+ * @param takeawayPostcode
+ * @param index
+ */
+function getAndInsertHHSearchRating(takeawayName, takeawayPostcode, index) {
+    chrome.runtime.sendMessage({"postcode": takeawayPostcode, "name": takeawayName}, function(response) {
+        var jsonResponse = JSON.parse(response.rating);
+        var rating = 6;
+        if (jsonResponse.FHRSEstablishment.EstablishmentCollection) {
+            if (jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.length > 1) {
+                rating = jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail[0].RatingValue;
+            } else {
+                rating = jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue;
+            }
+            // Inject the rating
+            setHungryHouseSearchListRating(rating, index);
+        } else {
+            setHungryHouseSearchListRating(6, index);
+        }
+    });
+}
+
+function valid_postcode(postcode) {
+    postcode = postcode.replace(/\s/g, "");
+    var regex = /^[A-Z]{1,2}[0-9]{1,2} ?[0-9][A-Z]{2}$/i;
+    return regex.test(postcode);
+}
+
 
