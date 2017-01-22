@@ -7,6 +7,9 @@ const JUST_EAT_INDIVIDUAL_PLACEHOLDER = "ratings";
 
 const HUNGRY_HOUSE_SEARCH_LIST = "restsDeliveryInfo";
 
+const FSA_LINK_URL_PREFIX = "http://ratings.food.gov.uk/enhanced-search/en-GB/";
+const FSA_LINK_URL_POSTFIX = "Relevance/0/%5E/%5E/0/1/10";
+
 takeaways = [];
 IS_JE = true;
 
@@ -114,12 +117,12 @@ function _new_getTakeawayRatingMP(takeaway) {
                 rating = jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue;
             }
         }
-        handleRes(rating);
+        handleRes(rating, takeaway[1], takeaway[0]);
         return true;
     });
 
-    var handleRes = function (rating) {
-        setJustEatIndividualRating(rating);
+    var handleRes = function (rating, takeawayName, takeawayPostcode) {
+        setJustEatIndividualRating(rating, takeawayName, takeawayPostcode);
     };
 
     return true;
@@ -151,17 +154,10 @@ function getTakeawayRatingMP(takeaway, index) {
             }
         }
         if (IS_JE) {
-            insertRatingImageSearchList(index, '<img src="' + urls[rating] + '" />');
+            insertRatingImageSearchList(index, '<img src="' + urls[rating] + '" />', takeawayName, takeawayPostcode);
         } else {
-            insertRatingImageHH('<img src="' + urls[rating] + '" />');
+            insertRatingImageHH('<img src="' + urls[rating] + '" />', takeawayName, takeawayPostcode);
         }
-        /*else {
-            if (IS_JE) {
-                insertRatingImageSearchList(index, '<img src="' + urls[6] + '" />');
-            } else {
-                insertRatingImageHH('<img src="' + urls[6] + '" />');
-            }
-        }*/
     });
 }
 
@@ -184,20 +180,31 @@ if (IS_JE) {
         return this;
     };
 
-    function insertRatingImageSearchList(index, rating) {
+    function insertRatingImageSearchList(index, rating, takeawayName, takeawayPostcode) {
         //Quite possibly the most disgusting javascript selector I've ever written.
         var $detailsDiv = $("div").filter(function( index ) {
-            return $( this ).attr( "class" ) == "o-tile c-restaurant";
+            return $( this ).attr( "class" ) == JUST_EAT_SEARCH_LIST;
         }).eq(index).eq(0).children().eq(0).children().eq(2).children().eq(1);
-        $( "<p style='float: right;margin-top: -40px;margin-right: 10px;padding-top: 20px;'>" + rating + "</p>" ).insertAfter($detailsDiv)
+
+        var ratingImageHolder = "<p>" + rating + "</p>";
+        var ratingImageLink = "<a style='float: right;margin-top: -40px;margin-right: 10px;padding-top: 20px;' " +
+            "href='" + generateFsaLinkUrl(takeawayName, takeawayPostcode) + "'>" + ratingImageHolder + "</a>";
+
+        $(ratingImageLink).insertAfter($detailsDiv)
     }
 
     insertRatingImageSearchList(1, "");
 }
 
 // HUNGRY HOUSE
-function insertRatingImageHH(rating) {
-    $( "<p style='float: right;margin-top: -15px;'>" + rating + "</p>" ).insertAfter($("#restMainInfoWrapper").children().last());
+function insertRatingImageHH(rating, takeawayName, takeawayPostcode) {
+    var ratingBody = "<p style='float: right;margin-top: -15px; margin-right: -15px;'>" + rating + "</p>";
+    var fsaLink = generateFsaLinkUrl(takeawayName, takeawayPostcode);
+
+    $( "<a target='_blank' href='" + fsaLink + "'> " + ratingBody + "</a>" ).insertAfter($("#restMainInfoWrapper").children().last());
+    document.getElementsByClassName("restRatingIn")[0].style.width = "99px";
+    document.getElementsByClassName("restDetailsBox")[0].style.width = "180px";
+    document.getElementsByClassName("restOpeningHours")[0].style.width = "127px";
 }
 
 function getJustEatIndividualName() {
@@ -211,30 +218,27 @@ function getJustEatIndividualPostcode() {
  * Sets / Injects the FSA rating for the restaurant given the rating and its index in the page
  * @param rating
  * @param index
+ * @param takeawayName
+ * @param takeawayRating
  */
-function setHungryHouseSearchListRating(rating, index) {
-    var img = $('<img />', {
-        src: urls[rating],
-        alt: 'Food standards agency has given this takeaway a rating of ' + rating + '.',
-    });
-    img.css("float", "right");
-    img.css("margin-right", "180px");
-    img.css("margin-top", "-15px");
-    img.appendTo($("." + HUNGRY_HOUSE_SEARCH_LIST)[index]);
+function setHungryHouseSearchListRating(rating, index, takeawayName, takeawayPostcode) {
+    var ratingImg = "<img src='" + urls[rating] + "' alt='Hygiene rating of " + rating + "' />";
+
+    var FsaLink = "<a style='float: right; margin-right: 180px; margin-top: -15px' href='"
+        + generateFsaLinkUrl(takeawayName, takeawayPostcode) + "'>" + ratingImg + " </a>";
+
+    document.getElementsByClassName(HUNGRY_HOUSE_SEARCH_LIST)[index].innerHTML += FsaLink;
 }
 
 /**
  * Inserts the HTML rating into next to the individual take away on just-eat.com
  * @param rating
  */
-function setJustEatIndividualRating(rating) {
-    var img = $('<img />', {
-        src: urls[rating],
-        alt: 'Food standards agency has given this takeaway a rating of ' + rating + '.',
-    });
-    img.css("float", "right");
-    img.css("margin-top", "-30px");
-    img.appendTo($("." + JUST_EAT_INDIVIDUAL_PLACEHOLDER));
+function setJustEatIndividualRating(rating, takeawayName, takeawayPostcode) {
+    var ratingImg = "<img src='" + urls[rating] + "' alt='Hygiene rating of " + rating + "' />";
+    var FsaLink = "<a style='float:right; margin-top: -10px;' href='" + generateFsaLinkUrl(takeawayName, takeawayPostcode) + "'>" + ratingImg + " </a>";
+
+    document.getElementsByClassName(JUST_EAT_INDIVIDUAL_PLACEHOLDER)[0].innerHTML += FsaLink;
 }
 
 function getHHSearchPostcode(takeawayName, url, indexOfTakewayOnList) {
@@ -278,17 +282,29 @@ function getAndInsertHHSearchRating(takeawayName, takeawayPostcode, index) {
                 rating = jsonResponse.FHRSEstablishment.EstablishmentCollection.EstablishmentDetail.RatingValue;
             }
             // Inject the rating
-            setHungryHouseSearchListRating(rating, index);
+            setHungryHouseSearchListRating(rating, index, takeawayName, takeawayPostcode);
         } else {
             setHungryHouseSearchListRating(6, index);
         }
     });
 }
 
+/**
+ * Checks if the postcode is in a valid format. Returns true if it is. False otherwise
+ * @param postcode
+ * @returns {boolean}
+ */
 function valid_postcode(postcode) {
     postcode = postcode.replace(/\s/g, "");
     var regex = /^[A-Z]{1,2}[0-9]{1,2} ?[0-9][A-Z]{2}$/i;
     return regex.test(postcode);
 }
 
-
+/**
+ * Generates the link URL for the FSA website for a given takeaway
+ * @param takeawayName
+ * @param takeawayPostcode
+ */
+function generateFsaLinkUrl(takeawayName, takeawayPostcode) {
+    return FSA_LINK_URL_PREFIX + takeawayName + "/" + takeawayPostcode  + "/" + FSA_LINK_URL_POSTFIX;
+}
