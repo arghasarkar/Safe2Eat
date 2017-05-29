@@ -1,7 +1,7 @@
 {
   "name": "Safe 2 EAT",
-  "version": "1.3.0.1",
-  "manifest_version": 2,
+  "version": "2.0.1",
+  "manifest_version": 3,
   "options_page": "options.html",
   "description": "We display hygiene ratings next to JustEat and HungryHouse take aways",
   "browser_action": {
