@@ -17,6 +17,10 @@ const DELIVEROO_SEARCH_LIST_CLASS = "restaurant-index-page--grid-row";
 const DELIVEROO_INDIVIDUAL_CLASS = "address";
 const DELIVEROO_INDIVIDUAL_JSON_CLASS = "js-react-on-rails-component";
 const DELIVEROO_INDIVIDUAL_PLACEHOLDER_CLASS = "restaurant__name";
+// For some take aways, the name is not given correctly. EG Pizza Express. Until a Fuzzy Search is complete, use this.
+const DELIVEROO_NAME_TRANSLATIONS = {
+    "PiizaExpress": "Pizza Express"
+};
 
 const FSA_LINK_URL_PREFIX = "http://ratings.food.gov.uk/enhanced-search/en-GB/";
 const FSA_LINK_URL_POSTFIX = "Relevance/0/%5E/%5E/0/1/10";
@@ -236,9 +240,9 @@ function getTakeawayRatingMP(takeaway, index) {
 function getDeliverooIndividualRating() {
     let takeaway = JSON.parse(document.getElementsByClassName(DELIVEROO_INDIVIDUAL_JSON_CLASS)[0].innerText).restaurant;
     let takeawayPostcode = postcodeWithSpace(takeaway.post_code);
-    let takeawayName = takeaway.name;
+    let takeawayName = (DELIVEROO_NAME_TRANSLATIONS[takeaway.name]) ? DELIVEROO_NAME_TRANSLATIONS[takeaway.name] : takeaway.name;
 
-    chrome.runtime.sendMessage({"postcode": takeawayPostcode, "name": takeawayName}, (response) => {
+    chrome.runtime.sendMessage({"postcode": takeawayPostcode, "name": takeawayName }, (response) => {
         let jsonResponse = JSON.parse(response.rating);
         let rating = 6;
 
