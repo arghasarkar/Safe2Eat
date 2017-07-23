@@ -19,7 +19,7 @@ const DELIVEROO_INDIVIDUAL_JSON_CLASS = "js-react-on-rails-component";
 const DELIVEROO_INDIVIDUAL_PLACEHOLDER_CLASS = "restaurant__name";
 // For some take aways, the name is not given correctly. EG Pizza Express. Until a Fuzzy Search is complete, use this.
 const DELIVEROO_NAME_TRANSLATIONS = {
-    "PiizaExpress": "Pizza Express"
+    "PizzaExpress": "Pizza Express"
 };
 
 const FSA_LINK_URL_PREFIX = "http://ratings.food.gov.uk/enhanced-search/en-GB/";
@@ -123,7 +123,7 @@ function init() {
                 let takeawayName = document.getElementsByClassName("regular current")[0].innerText.trim();
                 let rating = 0;
 
-                takeaways.push(postcode, takeawayName, rating);
+                takeaways.push(postcode, DELIVEROO_NAME_TRANSLATIONS[takeawayName] || takeawayName, rating);
                 getTakeawayRatingMP(takeaways, 0);
             }
             break;
@@ -193,7 +193,7 @@ function _new_getTakeawayRatingMP(takeaway) {
     });
 
     let handleRes = function (rating, takeawayName, takeawayPostcode) {
-        setJustEatIndividualRating(rating, takeawayName, takeawayPostcode);
+        setJustEatIndividualRating(rating, DELIVEROO_NAME_TRANSLATIONS[takeawayName] || takeawayName, takeawayPostcode);
     };
 
     return true;
@@ -208,7 +208,7 @@ function getTakeawayRatingMP(takeaway, index) {
     let takeawayPostcode = takeaway[0];
     let takeawayName = takeaway[1];
 
-    chrome.runtime.sendMessage({"postcode": takeawayPostcode, "name": takeawayName}, function(response) {
+    chrome.runtime.sendMessage({"postcode": takeawayPostcode, "name": DELIVEROO_NAME_TRANSLATIONS[takeawayName] || takeawayName}, function(response) {
         let jsonResponse = JSON.parse(response.rating);
         /**
          * Call a function here to insert the RATING IMAGE.
@@ -225,9 +225,9 @@ function getTakeawayRatingMP(takeaway, index) {
             }
         }
         if (VENDOR === JUST_EAT) {
-            insertRatingImageSearchList(index, '<img src="' + urls[rating] + '" />', takeawayName, takeawayPostcode);
+            insertRatingImageSearchList(index, '<img src="' + urls[rating] + '" />', DELIVEROO_NAME_TRANSLATIONS[takeawayName] || takeawayName, takeawayPostcode);
         } else if (VENDOR === HUNGRY_HOUSE) {
-            insertRatingImageHH('<img src="' + urls[rating] + '" />', takeawayName, takeawayPostcode);
+            insertRatingImageHH('<img src="' + urls[rating] + '" />', DELIVEROO_NAME_TRANSLATIONS[takeawayName] || takeawayName, takeawayPostcode);
         } else if (VENDOR === DELIVEROO) {
             getDeliverooIndividualRating();
         }
@@ -242,7 +242,7 @@ function getDeliverooIndividualRating() {
     let takeawayPostcode = postcodeWithSpace(takeaway.post_code);
     let takeawayName = (DELIVEROO_NAME_TRANSLATIONS[takeaway.name]) ? DELIVEROO_NAME_TRANSLATIONS[takeaway.name] : takeaway.name;
 
-    chrome.runtime.sendMessage({"postcode": takeawayPostcode, "name": takeawayName }, (response) => {
+    chrome.runtime.sendMessage({"postcode": takeawayPostcode, "name": DELIVEROO_NAME_TRANSLATIONS[takeawayName] || takeawayName }, (response) => {
         let jsonResponse = JSON.parse(response.rating);
         let rating = 6;
 
