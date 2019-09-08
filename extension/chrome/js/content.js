@@ -2,7 +2,7 @@ const UNRATED_VALUE = 6;
 
 const JUST_EAT = "JustEat";
 const JUST_EAT_FQDN = "just-eat.co.uk";
-const JUST_EAT_SEARCH_LIST = "o-tile c-restaurant";
+const JUST_EAT_SEARCH_LIST = "c-listing-loader";
 const JUST_EAT_INDIVIDUAL_NAME = "name";
 const JUST_EAT_INDIVIDUAL_POSTCODE = "postcode";
 const JUST_EAT_INDIVIDUAL_PLACEHOLDER = "ratings";
